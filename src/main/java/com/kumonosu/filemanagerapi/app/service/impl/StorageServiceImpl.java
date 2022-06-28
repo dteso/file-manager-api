@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class StorageServiceImpl implements StorageService {
 
-	private final static String PUBLIC_FOLDER = "my-storage";
+	private final static String PUBLIC_FOLDER = "public";
 
 	private final Path root = Paths.get(PUBLIC_FOLDER);
 

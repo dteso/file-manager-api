@@ -57,13 +57,31 @@ public class FileController {
 
 			// TODO: Split not working???? filename.split(".") returns error
 			String ext = filename.substring(filename.length() - 5, filename.length());
-
-			// .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" +
-			// file.getFilename() + "\"") //Para generar descarga
 			if (ext.equalsIgnoreCase(".json")) {
 				return ResponseEntity.ok().header(HttpHeaders.CONTENT_TYPE, "application/json").body(file);
 			} else {
 				return ResponseEntity.ok().header(HttpHeaders.CONTENT_TYPE, "image/png; image/jpeg; image/jpg")
+						.body(file);
+			}
+		} catch (Exception e) {
+			return ResponseEntity.badRequest().build();
+		}
+	}
+
+	@GetMapping("/download/{filename}")
+	@ResponseBody
+	public ResponseEntity<Resource> download(@PathVariable String filename) {
+		try {
+			Resource file = storageService.load(filename);
+
+			// TODO: Split not working???? filename.split(".") returns error
+			String ext = filename.substring(filename.length() - 5, filename.length());
+
+			if (ext.equalsIgnoreCase(".json")) {
+				return ResponseEntity.ok().header(HttpHeaders.CONTENT_TYPE, "application/json").body(file);
+			} else {
+				return ResponseEntity.ok()
+						.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilename() + "\"")
 						.body(file);
 			}
 		} catch (Exception e) {
@@ -83,16 +101,16 @@ public class FileController {
 
 		return ResponseEntity.status(HttpStatus.OK).body(fileInfos);
 	}
-	
+
 	@DeleteMapping("/delete/{filename}")
 	public ResponseEntity<?> deleteFile(@PathVariable String filename) {
-			storageService.delete(filename);
+		storageService.delete(filename);
 		return ResponseEntity.status(HttpStatus.OK).body(filename);
 	}
-	
+
 	@DeleteMapping("/delete-all")
 	public ResponseEntity<?> deleteFiles() {
-			storageService.deleteAll();
+		storageService.deleteAll();
 		return ResponseEntity.status(HttpStatus.OK).body("ALL FILES DELETED");
 	}
 
