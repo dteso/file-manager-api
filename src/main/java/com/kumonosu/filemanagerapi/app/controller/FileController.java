@@ -18,37 +18,45 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.kumonosu.filemanagerapi.app.entity.FileInfo;
+import com.kumonosu.filemanagerapi.app.dto.FileInfoResponseDto;
 import com.kumonosu.filemanagerapi.app.service.StorageService;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@Api(value = "files-api", tags = { "files" }, description = "Files Operations")
 @RestController
-@RequestMapping("/api/files")
+@RequestMapping("/files")
 public class FileController {
 
 	@Autowired
-	private StorageService storageService;
+	StorageService storageService;
 
+	@ApiOperation(value = "Uploads attached file on request")
+	@ApiResponses(value = {
+			@ApiResponse(code = 200, message = "File saved successfully", response = FileInfoResponseDto.class) })
 	@PostMapping("/upload")
-	public ResponseEntity<?> handleFileUpload(@RequestParam("image") MultipartFile file,
-			RedirectAttributes redirectAttributes) {
-
-		System.out.println("UPLOAD IMAGE ---> " + file.getOriginalFilename());
+	public ResponseEntity<?> upload(@RequestParam("image") MultipartFile file) {
+		FileInfoResponseDto responseDto = new FileInfoResponseDto();
 		try {
-			log.info("File Size: " + file.getSize());
-			storageService.store(file);
+			responseDto = storageService.store(file);
 		} catch (Exception e) {
-			log.error("Error uploading image");
+			log.error(">>>>> ERROR >>>>>>>  Error uploading image");
+			responseDto.setHttpStatus(HttpStatus.CONFLICT.name());
+			responseDto.setError(e.getMessage());
 			return ResponseEntity.status(HttpStatus.CONFLICT).header(HttpHeaders.CONTENT_TYPE, "application/json")
-					.body("KO");
+					.body(responseDto);
 		}
-		return ResponseEntity.ok().build();
+		return ResponseEntity.status(HttpStatus.OK).header(HttpHeaders.CONTENT_TYPE, "application/json")
+				.body(responseDto);
 	}
 
+	@ApiOperation(value = "Gets a file as a resource directly on the response")
 	@GetMapping("/get/{filename}")
 	@ResponseBody
 	public ResponseEntity<Resource> getFile(@PathVariable String filename) {
@@ -68,14 +76,14 @@ public class FileController {
 		}
 	}
 
+	@ApiOperation(value = "Download the the file with filename established as parameter")
 	@GetMapping("/download/{filename}")
 	@ResponseBody
 	public ResponseEntity<Resource> download(@PathVariable String filename) {
 		try {
 			Resource file = storageService.load(filename);
 
-			// TODO: Split not working???? filename.split(".") returns error
-			String ext = filename.substring(filename.length() - 5, filename.length());
+			String ext = filename.split("\\.")[1];
 
 			if (ext.equalsIgnoreCase(".json")) {
 				return ResponseEntity.ok().header(HttpHeaders.CONTENT_TYPE, "application/json").body(file);
@@ -89,25 +97,32 @@ public class FileController {
 		}
 	}
 
+	@ApiOperation(value = "Gets a list of all stored files")
 	@GetMapping("/list-all")
-	public ResponseEntity<List<FileInfo>> getListFiles() {
-		List<FileInfo> fileInfos = storageService.loadAll().map(path -> {
+	public ResponseEntity<List<FileInfoResponseDto>> getListFiles() {
+		FileInfoResponseDto responseDto = new FileInfoResponseDto();
+		List<FileInfoResponseDto> fileInfos = storageService.loadAll().map(path -> {
 			String filename = path.getFileName().toString();
 			String url = MvcUriComponentsBuilder
 					.fromMethodName(FileController.class, "getFile", path.getFileName().toString()).build().toString();
+			// TODO
+			responseDto.setName(filename);
+			responseDto.setPath(url);
 
-			return new FileInfo(filename, url);
+			return responseDto;
 		}).collect(Collectors.toList());
 
 		return ResponseEntity.status(HttpStatus.OK).body(fileInfos);
 	}
 
+	@ApiOperation(value = "Deletes a file by his name")
 	@DeleteMapping("/delete/{filename}")
 	public ResponseEntity<?> deleteFile(@PathVariable String filename) {
 		storageService.delete(filename);
 		return ResponseEntity.status(HttpStatus.OK).body(filename);
 	}
 
+	@ApiOperation(value = "Remove all files")
 	@DeleteMapping("/delete-all")
 	public ResponseEntity<?> deleteFiles() {
 		storageService.deleteAll();

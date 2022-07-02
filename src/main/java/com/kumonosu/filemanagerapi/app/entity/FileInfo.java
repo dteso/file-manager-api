@@ -6,6 +6,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -14,27 +15,31 @@ import lombok.Setter;
 @Setter
 @Entity
 @NoArgsConstructor
+@AllArgsConstructor
 public class FileInfo {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column
+	@Column(name = "name")
 	private String name;
 
-	@Column
-	private String url;
-	
-	@Column
-	private String type;
-	
-	@Column
-	private String extension;
-		
+	@Column(name = "filename")
+	private String filename;
 
-	public FileInfo(String name, String url) {
-		this.name = name;
-		this.url = url;
-	}
+	@Column(name = "path")
+	private String path;
+
+	@Column(name = "type")
+	private String type;
+
+	@Column(name = "extension")
+	private String extension;
+
+	@Column(name = "created_time")
+	private String createdTime;
+
+	@Column(name = "updated_time")
+	private String updatedTime;
 }

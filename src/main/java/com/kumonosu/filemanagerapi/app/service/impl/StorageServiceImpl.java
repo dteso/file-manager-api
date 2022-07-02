@@ -6,25 +6,42 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.util.UUID;
 import java.util.stream.Stream;
 
+import javax.transaction.Transactional;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileSystemUtils;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
 
+import com.kumonosu.filemanagerapi.app.controller.FileController;
+import com.kumonosu.filemanagerapi.app.dto.FileInfoDto;
+import com.kumonosu.filemanagerapi.app.dto.FileInfoResponseDto;
+import com.kumonosu.filemanagerapi.app.dto.mapper.FileInfoMapper;
+import com.kumonosu.filemanagerapi.app.entity.FileInfo;
+import com.kumonosu.filemanagerapi.app.repository.FileRepository;
 import com.kumonosu.filemanagerapi.app.service.StorageService;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
+@Transactional
 public class StorageServiceImpl implements StorageService {
 
-	private final static String PUBLIC_FOLDER = "public";
+	@Autowired
+	FileRepository fileRepository;
 
-	private final Path root = Paths.get(PUBLIC_FOLDER);
+	private final static String ROOT_FOLDER = "public";
+
+	private final Path root = Paths.get(ROOT_FOLDER);
 
 	@Override
 	public void init() {
@@ -40,10 +57,20 @@ public class StorageServiceImpl implements StorageService {
 	}
 
 	@Override
-	public void store(MultipartFile file) {
+	public FileInfoResponseDto store(MultipartFile file) {
+
+		final UUID corrIdUuid = UUID.randomUUID();
+		FileInfoResponseDto fileInfoResponse = new FileInfoResponseDto();
+
 		try {
-			System.out.println(this.root);
-			Files.copy(file.getInputStream(), this.root.resolve(file.getOriginalFilename()));
+			String ext = file.getOriginalFilename().split("\\.")[1];
+			Files.copy(file.getInputStream(), this.root.resolve(corrIdUuid.toString() + "." + ext));
+			FileInfoDto fileInfoDto = setFileInfoDtoDb(file, corrIdUuid.toString(), ext);
+			FileInfo fileInfoDb = fileRepository.save(FileInfoMapper.fromDtoToEntity(fileInfoDto));
+			fileInfoResponse.setHttpStatus(HttpStatus.OK.name());
+			fileInfoResponse.setPath(fileInfoDb.getPath());
+			fileInfoResponse.setName(fileInfoDb.getName());
+			fileInfoResponse.setId(fileInfoDb.getId());
 		} catch (FileAlreadyExistsException alreadyExistsException) {
 			log.info("Error: File already exists.");
 			throw new RuntimeException("Error: File already exists " + alreadyExistsException.getMessage());
@@ -51,6 +78,23 @@ public class StorageServiceImpl implements StorageService {
 			log.info("Could not store the file. Error: " + e.getMessage());
 			throw new RuntimeException("Could not store the file. Error: " + e.getMessage());
 		}
+		return fileInfoResponse;
+	}
+
+	private FileInfoDto setFileInfoDtoDb(MultipartFile file, String uuid, String ext) {
+
+		FileInfoDto fileInfoDto = new FileInfoDto();
+		String url = MvcUriComponentsBuilder.fromMethodName(FileController.class, "getFile", uuid + "." + ext).build()
+				.toString();
+
+		fileInfoDto.setName(uuid + '.' + ext);
+		fileInfoDto.setFilaname(file.getOriginalFilename());
+		fileInfoDto.setType("FILE_TYPE");
+		fileInfoDto.setExtension(ext);
+		fileInfoDto.setPath(url);
+		fileInfoDto.setCreatedTime(LocalDate.now().toString());
+
+		return fileInfoDto;
 	}
 
 	@Override
@@ -83,6 +127,7 @@ public class StorageServiceImpl implements StorageService {
 	@Override
 	public void deleteAll() {
 		FileSystemUtils.deleteRecursively(root.toFile());
+		fileRepository.deleteAll();
 		init();
 	}
 
@@ -94,4 +139,5 @@ public class StorageServiceImpl implements StorageService {
 			throw new RuntimeException("Could not load the files!");
 		}
 	}
+
 }
