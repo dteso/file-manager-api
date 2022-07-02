@@ -8,6 +8,9 @@ import org.springframework.context.annotation.Bean;
 
 import com.kumonosu.filemanagerapi.app.service.StorageService;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @SpringBootApplication
 public class FilemanagerapiApplication {
 
@@ -17,12 +20,12 @@ public class FilemanagerapiApplication {
 
 	class StorageStarter {
 		@Resource
-	    StorageService storageService;
-		
+		StorageService storageService;
+
 		@Bean
 		void initFolder() {
-			System.out.println("Inicializando storage");
-		    storageService.init();
+			log.info("------------------- Inicializando storage --------------");
+			storageService.init();
 		}
 	}
 }

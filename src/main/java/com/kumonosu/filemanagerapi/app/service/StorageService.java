@@ -6,13 +6,13 @@ import java.util.stream.Stream;
 import org.springframework.core.io.Resource;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.kumonosu.filemanagerapi.app.dto.FileInfoResponseDto;
+import com.kumonosu.filemanagerapi.app.entity.FileInfo;
 
 public interface StorageService {
 
 	void init();
 
-	FileInfoResponseDto store(MultipartFile file);
+	FileInfo store(MultipartFile file);
 
 	Stream<Path> loadAll();
 
@@ -21,4 +21,6 @@ public interface StorageService {
 	void deleteAll();
 
 	void delete(String filename);
+
+	FileInfo getFileByName(String name);
 }

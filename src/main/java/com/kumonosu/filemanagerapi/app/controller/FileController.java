@@ -20,6 +20,9 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
 
 import com.kumonosu.filemanagerapi.app.dto.FileInfoResponseDto;
+import com.kumonosu.filemanagerapi.app.dto.FileStoredDto;
+import com.kumonosu.filemanagerapi.app.dto.FileStoredResponseDto;
+import com.kumonosu.filemanagerapi.app.dto.mapper.FileInfoMapper;
 import com.kumonosu.filemanagerapi.app.service.StorageService;
 
 import io.swagger.annotations.Api;
@@ -44,7 +47,7 @@ public class FileController {
 	public ResponseEntity<?> upload(@RequestParam("image") MultipartFile file) {
 		FileInfoResponseDto responseDto = new FileInfoResponseDto();
 		try {
-			responseDto = storageService.store(file);
+			responseDto = FileInfoMapper.fromEntityToResponse(storageService.store(file));
 		} catch (Exception e) {
 			log.error(">>>>> ERROR >>>>>>>  Error uploading image");
 			responseDto.setHttpStatus(HttpStatus.CONFLICT.name());
@@ -52,19 +55,19 @@ public class FileController {
 			return ResponseEntity.status(HttpStatus.CONFLICT).header(HttpHeaders.CONTENT_TYPE, "application/json")
 					.body(responseDto);
 		}
+		responseDto.setHttpStatus(HttpStatus.OK.name());
 		return ResponseEntity.status(HttpStatus.OK).header(HttpHeaders.CONTENT_TYPE, "application/json")
 				.body(responseDto);
 	}
 
 	@ApiOperation(value = "Gets a file as a resource directly on the response")
-	@GetMapping("/get/{filename}")
+	@GetMapping("/show/{filename}")
 	@ResponseBody
 	public ResponseEntity<Resource> getFile(@PathVariable String filename) {
 		try {
 			Resource file = storageService.load(filename);
 
-			// TODO: Split not working???? filename.split(".") returns error
-			String ext = filename.substring(filename.length() - 5, filename.length());
+			String ext = filename.split("\\.")[1];
 			if (ext.equalsIgnoreCase(".json")) {
 				return ResponseEntity.ok().header(HttpHeaders.CONTENT_TYPE, "application/json").body(file);
 			} else {
@@ -74,6 +77,20 @@ public class FileController {
 		} catch (Exception e) {
 			return ResponseEntity.badRequest().build();
 		}
+	}
+
+	@ApiOperation(value = "Gets file info from db using filename")
+	@GetMapping("/get/{filename}")
+	@ResponseBody
+	public ResponseEntity<FileInfoResponseDto> getFileFromDb(@PathVariable String filename) {
+		FileInfoResponseDto responseDto = new FileInfoResponseDto();
+		try {
+			responseDto = FileInfoMapper.fromEntityToResponse(storageService.getFileByName(filename));
+		} catch (Exception e) {
+			return ResponseEntity.badRequest().build();
+		}
+		responseDto.setHttpStatus(HttpStatus.OK.name());
+		return ResponseEntity.status(HttpStatus.OK).body(responseDto);
 	}
 
 	@ApiOperation(value = "Download the the file with filename established as parameter")
@@ -99,20 +116,24 @@ public class FileController {
 
 	@ApiOperation(value = "Gets a list of all stored files")
 	@GetMapping("/list-all")
-	public ResponseEntity<List<FileInfoResponseDto>> getListFiles() {
-		FileInfoResponseDto responseDto = new FileInfoResponseDto();
-		List<FileInfoResponseDto> fileInfos = storageService.loadAll().map(path -> {
+	public ResponseEntity<FileStoredResponseDto> getListFiles() {
+		FileStoredResponseDto fileStoredResponse = new FileStoredResponseDto();
+		FileStoredDto responseDto = new FileStoredDto();
+		List<FileStoredDto> fileInfos = storageService.loadAll().map(path -> {
 			String filename = path.getFileName().toString();
 			String url = MvcUriComponentsBuilder
 					.fromMethodName(FileController.class, "getFile", path.getFileName().toString()).build().toString();
-			// TODO
-			responseDto.setName(filename);
+
+			responseDto.setFilaname(filename);
 			responseDto.setPath(url);
 
 			return responseDto;
 		}).collect(Collectors.toList());
 
-		return ResponseEntity.status(HttpStatus.OK).body(fileInfos);
+		fileStoredResponse.setItemCount(fileInfos.size());
+		fileStoredResponse.setFileList(fileInfos);
+
+		return ResponseEntity.status(HttpStatus.OK).body(fileStoredResponse);
 	}
 
 	@ApiOperation(value = "Deletes a file by his name")

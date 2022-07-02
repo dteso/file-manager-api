@@ -3,6 +3,7 @@ package com.kumonosu.filemanagerapi.app.dto.mapper;
 import org.springframework.stereotype.Service;
 
 import com.kumonosu.filemanagerapi.app.dto.FileInfoDto;
+import com.kumonosu.filemanagerapi.app.dto.FileInfoResponseDto;
 import com.kumonosu.filemanagerapi.app.entity.FileInfo;
 
 @Service
@@ -23,6 +24,23 @@ public final class FileInfoMapper {
 		fileInfo.setFilename(dto.getFilaname());
 		fileInfo.setCreatedTime(dto.getCreatedTime());
 		fileInfo.setUpdatedTime(dto.getUpdatedTime());
+
+		return fileInfo;
+	}
+
+	public static FileInfoResponseDto fromEntityToResponse(FileInfo file) {
+
+		if (file == null) {
+			return null;
+		}
+
+		FileInfoResponseDto fileInfo = new FileInfoResponseDto();
+
+		fileInfo.setName(file.getName());
+		fileInfo.setPath(file.getPath());
+		fileInfo.setId(file.getId());
+		fileInfo.setOriginalFilename(file.getFilename());
+		fileInfo.setCreatedTime(file.getCreatedTime());
 
 		return fileInfo;
 	}

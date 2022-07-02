@@ -12,10 +12,10 @@ import java.util.stream.Stream;
 
 import javax.transaction.Transactional;
 
+import org.apache.tomcat.util.http.fileupload.impl.SizeLimitExceededException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileSystemUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,7 +23,6 @@ import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBui
 
 import com.kumonosu.filemanagerapi.app.controller.FileController;
 import com.kumonosu.filemanagerapi.app.dto.FileInfoDto;
-import com.kumonosu.filemanagerapi.app.dto.FileInfoResponseDto;
 import com.kumonosu.filemanagerapi.app.dto.mapper.FileInfoMapper;
 import com.kumonosu.filemanagerapi.app.entity.FileInfo;
 import com.kumonosu.filemanagerapi.app.repository.FileRepository;
@@ -49,7 +48,7 @@ public class StorageServiceImpl implements StorageService {
 			if (!Files.exists(root)) {
 				Files.createDirectory(root);
 			} else {
-				System.out.println("El directorio ya está creado: " + root.getName(0));
+				log.info("El directorio ya está creado: " + root.getName(0));
 			}
 		} catch (IOException e) {
 			throw new RuntimeException("Could not initialize folder for upload!");
@@ -57,28 +56,27 @@ public class StorageServiceImpl implements StorageService {
 	}
 
 	@Override
-	public FileInfoResponseDto store(MultipartFile file) {
+	public FileInfo store(MultipartFile file) {
 
 		final UUID corrIdUuid = UUID.randomUUID();
-		FileInfoResponseDto fileInfoResponse = new FileInfoResponseDto();
+		FileInfo fileInfoDb = new FileInfo();
 
 		try {
 			String ext = file.getOriginalFilename().split("\\.")[1];
 			Files.copy(file.getInputStream(), this.root.resolve(corrIdUuid.toString() + "." + ext));
 			FileInfoDto fileInfoDto = setFileInfoDtoDb(file, corrIdUuid.toString(), ext);
-			FileInfo fileInfoDb = fileRepository.save(FileInfoMapper.fromDtoToEntity(fileInfoDto));
-			fileInfoResponse.setHttpStatus(HttpStatus.OK.name());
-			fileInfoResponse.setPath(fileInfoDb.getPath());
-			fileInfoResponse.setName(fileInfoDb.getName());
-			fileInfoResponse.setId(fileInfoDb.getId());
+			fileInfoDb = fileRepository.save(FileInfoMapper.fromDtoToEntity(fileInfoDto));
 		} catch (FileAlreadyExistsException alreadyExistsException) {
-			log.info("Error: File already exists.");
+			log.error("Error: File already exists.");
 			throw new RuntimeException("Error: File already exists " + alreadyExistsException.getMessage());
+		} catch (SizeLimitExceededException sizeLimitException) {
+			log.error("Error: File size limit exceeded");
+			throw new RuntimeException("Error: File size limit exceeded" + sizeLimitException.getMessage());
 		} catch (Exception e) {
-			log.info("Could not store the file. Error: " + e.getMessage());
+			log.error("Could not store the file. Error: " + e.getMessage());
 			throw new RuntimeException("Could not store the file. Error: " + e.getMessage());
 		}
-		return fileInfoResponse;
+		return fileInfoDb;
 	}
 
 	private FileInfoDto setFileInfoDtoDb(MultipartFile file, String uuid, String ext) {
@@ -116,8 +114,23 @@ public class StorageServiceImpl implements StorageService {
 	}
 
 	@Override
+	public Stream<Path> loadAll() {
+		try {
+			return Files.walk(this.root, 1).filter(path -> !path.equals(this.root)).map(this.root::relativize);
+		} catch (IOException e) {
+			throw new RuntimeException("Could not load the files!");
+		}
+	}
+
+	@Override
+	public FileInfo getFileByName(String name) {
+		return fileRepository.findFileInfoByName(name);
+	}
+
+	@Override
 	public void delete(String filename) {
 		try {
+			fileRepository.deleteFileInfoByName(filename);
 			Files.delete(this.root.resolve(filename));
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -126,18 +139,9 @@ public class StorageServiceImpl implements StorageService {
 
 	@Override
 	public void deleteAll() {
-		FileSystemUtils.deleteRecursively(root.toFile());
 		fileRepository.deleteAll();
+		FileSystemUtils.deleteRecursively(root.toFile());
 		init();
-	}
-
-	@Override
-	public Stream<Path> loadAll() {
-		try {
-			return Files.walk(this.root, 1).filter(path -> !path.equals(this.root)).map(this.root::relativize);
-		} catch (IOException e) {
-			throw new RuntimeException("Could not load the files!");
-		}
 	}
 
 }

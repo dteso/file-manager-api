@@ -8,4 +8,8 @@ import com.kumonosu.filemanagerapi.app.entity.FileInfo;
 @Repository
 public interface FileRepository extends JpaRepository<FileInfo, Long> {
 
+	public FileInfo findFileInfoByName(String name);
+
+	public Integer deleteFileInfoByName(String name);
+
 }
