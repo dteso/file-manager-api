@@ -12,7 +12,7 @@ public interface StorageService {
 
 	void init();
 
-	FileInfo store(MultipartFile file);
+	FileInfo store(String folder, MultipartFile file);
 
 	Stream<Path> loadAll();
 

@@ -1,10 +1,11 @@
-package com.kumonosu.filemanagerapi.app.dto;
+package com.kumonosu.filemanagerapi.app.dto.file;
 
 import javax.validation.constraints.NotNull;
 
 import org.springframework.validation.annotation.Validated;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.kumonosu.filemanagerapi.app.entity.FolderInfo;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -32,6 +33,8 @@ public class FileInfoDto {
 	@NotNull
 	@JsonProperty(value = "extension")
 	private String extension;
+
+	private FolderInfo folder;
 
 	private String createdTime;
 

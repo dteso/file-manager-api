@@ -1,4 +1,4 @@
-package com.kumonosu.filemanagerapi.app.dto;
+package com.kumonosu.filemanagerapi.app.dto.file;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -9,9 +9,6 @@ public class FileInfoResponseDto {
 
 	@JsonProperty(value = "id")
 	private Long id;
-
-	@JsonProperty(value = "httpStatus")
-	private String httpStatus;
 
 	@JsonProperty(value = "name")
 	private String name;

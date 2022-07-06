@@ -22,10 +22,12 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
 
 import com.kumonosu.filemanagerapi.app.controller.FileController;
-import com.kumonosu.filemanagerapi.app.dto.FileInfoDto;
-import com.kumonosu.filemanagerapi.app.dto.mapper.FileInfoMapper;
+import com.kumonosu.filemanagerapi.app.dto.file.FileInfoDto;
+import com.kumonosu.filemanagerapi.app.dto.file.mapper.FileInfoMapper;
 import com.kumonosu.filemanagerapi.app.entity.FileInfo;
+import com.kumonosu.filemanagerapi.app.entity.FolderInfo;
 import com.kumonosu.filemanagerapi.app.repository.FileRepository;
+import com.kumonosu.filemanagerapi.app.service.FolderInfoService;
 import com.kumonosu.filemanagerapi.app.service.StorageService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +39,9 @@ public class StorageServiceImpl implements StorageService {
 
 	@Autowired
 	FileRepository fileRepository;
+
+	@Autowired
+	FolderInfoService folderService;
 
 	private final static String ROOT_FOLDER = "public";
 
@@ -56,16 +61,30 @@ public class StorageServiceImpl implements StorageService {
 	}
 
 	@Override
-	public FileInfo store(MultipartFile file) {
+	public FileInfo store(String path, MultipartFile file) {
 
 		final UUID corrIdUuid = UUID.randomUUID();
 		FileInfo fileInfoDb = new FileInfo();
 
 		try {
+
 			String ext = file.getOriginalFilename().split("\\.")[1];
 			Files.copy(file.getInputStream(), this.root.resolve(corrIdUuid.toString() + "." + ext));
-			FileInfoDto fileInfoDto = setFileInfoDtoDb(file, corrIdUuid.toString(), ext);
-			fileInfoDb = fileRepository.save(FileInfoMapper.fromDtoToEntity(fileInfoDto));
+
+			String[] splittedPath = path.split("/");
+			String folderName = splittedPath[splittedPath.length - 1];
+
+			FolderInfo folderInfo = new FolderInfo();
+
+			if (folderService.processPath(path, folderInfo)) {
+				folderInfo = folderService.getFolderByName(folderName);
+				FileInfoDto fileInfoDto = setFileInfoDtoDb(file, corrIdUuid.toString(), ext, folderInfo);
+				fileInfoDb = fileRepository.save(FileInfoMapper.fromDtoToEntity(fileInfoDto));
+			} else {
+				log.error("Error: Not a valid directory");
+				throw new RuntimeException("Not a valid directory");
+			}
+
 		} catch (FileAlreadyExistsException alreadyExistsException) {
 			log.error("Error: File already exists.");
 			throw new RuntimeException("Error: File already exists " + alreadyExistsException.getMessage());
@@ -79,7 +98,7 @@ public class StorageServiceImpl implements StorageService {
 		return fileInfoDb;
 	}
 
-	private FileInfoDto setFileInfoDtoDb(MultipartFile file, String uuid, String ext) {
+	private FileInfoDto setFileInfoDtoDb(MultipartFile file, String uuid, String ext, FolderInfo folderInfo) {
 
 		FileInfoDto fileInfoDto = new FileInfoDto();
 		String url = MvcUriComponentsBuilder.fromMethodName(FileController.class, "getFile", uuid + "." + ext).build()
@@ -91,6 +110,7 @@ public class StorageServiceImpl implements StorageService {
 		fileInfoDto.setExtension(ext);
 		fileInfoDto.setPath(url);
 		fileInfoDto.setCreatedTime(LocalDate.now().toString());
+		fileInfoDto.setFolder(folderInfo);
 
 		return fileInfoDto;
 	}

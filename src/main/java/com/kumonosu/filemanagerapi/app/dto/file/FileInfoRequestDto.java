@@ -1,6 +1,4 @@
-package com.kumonosu.filemanagerapi.app.dto;
-
-import javax.validation.constraints.NotNull;
+package com.kumonosu.filemanagerapi.app.dto.file;
 
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.multipart.MultipartFile;
