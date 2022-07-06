@@ -19,10 +19,10 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
 
-import com.kumonosu.filemanagerapi.app.dto.FileInfoResponseDto;
-import com.kumonosu.filemanagerapi.app.dto.FileStoredDto;
-import com.kumonosu.filemanagerapi.app.dto.FileStoredResponseDto;
-import com.kumonosu.filemanagerapi.app.dto.mapper.FileInfoMapper;
+import com.kumonosu.filemanagerapi.app.dto.file.FileInfoResponseDto;
+import com.kumonosu.filemanagerapi.app.dto.file.FileStoredDto;
+import com.kumonosu.filemanagerapi.app.dto.file.FileStoredResponseDto;
+import com.kumonosu.filemanagerapi.app.dto.file.mapper.FileInfoMapper;
 import com.kumonosu.filemanagerapi.app.service.StorageService;
 
 import io.swagger.annotations.Api;
@@ -44,18 +44,17 @@ public class FileController {
 	@ApiResponses(value = {
 			@ApiResponse(code = 200, message = "File saved successfully", response = FileInfoResponseDto.class) })
 	@PostMapping("/upload")
-	public ResponseEntity<?> upload(@RequestParam("image") MultipartFile file) {
+	public ResponseEntity<?> upload(@RequestParam("image") MultipartFile file, @RequestParam("path") String path) {
 		FileInfoResponseDto responseDto = new FileInfoResponseDto();
+		log.info("Path: " + path);
 		try {
-			responseDto = FileInfoMapper.fromEntityToResponse(storageService.store(file));
+			responseDto = FileInfoMapper.fromEntityToResponse(storageService.store(path, file));
 		} catch (Exception e) {
 			log.error(">>>>> ERROR >>>>>>>  Error uploading image");
-			responseDto.setHttpStatus(HttpStatus.CONFLICT.name());
 			responseDto.setError(e.getMessage());
 			return ResponseEntity.status(HttpStatus.CONFLICT).header(HttpHeaders.CONTENT_TYPE, "application/json")
 					.body(responseDto);
 		}
-		responseDto.setHttpStatus(HttpStatus.OK.name());
 		return ResponseEntity.status(HttpStatus.OK).header(HttpHeaders.CONTENT_TYPE, "application/json")
 				.body(responseDto);
 	}
@@ -89,7 +88,6 @@ public class FileController {
 		} catch (Exception e) {
 			return ResponseEntity.badRequest().build();
 		}
-		responseDto.setHttpStatus(HttpStatus.OK.name());
 		return ResponseEntity.status(HttpStatus.OK).body(responseDto);
 	}
 

@@ -1,4 +1,4 @@
-package com.kumonosu.filemanagerapi.app.dto;
+package com.kumonosu.filemanagerapi.app.dto.file;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

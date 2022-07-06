@@ -1,9 +1,9 @@
-package com.kumonosu.filemanagerapi.app.dto.mapper;
+package com.kumonosu.filemanagerapi.app.dto.file.mapper;
 
 import org.springframework.stereotype.Service;
 
-import com.kumonosu.filemanagerapi.app.dto.FileInfoDto;
-import com.kumonosu.filemanagerapi.app.dto.FileInfoResponseDto;
+import com.kumonosu.filemanagerapi.app.dto.file.FileInfoDto;
+import com.kumonosu.filemanagerapi.app.dto.file.FileInfoResponseDto;
 import com.kumonosu.filemanagerapi.app.entity.FileInfo;
 
 @Service
@@ -24,6 +24,7 @@ public final class FileInfoMapper {
 		fileInfo.setFilename(dto.getFilaname());
 		fileInfo.setCreatedTime(dto.getCreatedTime());
 		fileInfo.setUpdatedTime(dto.getUpdatedTime());
+		fileInfo.setFolder(dto.getFolder());
 
 		return fileInfo;
 	}
