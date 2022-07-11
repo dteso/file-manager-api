@@ -51,7 +51,6 @@ public class FileController {
 			responseDto = FileInfoMapper.fromEntityToResponse(storageService.store(path, file));
 		} catch (Exception e) {
 			log.error(">>>>> ERROR >>>>>>>  Error uploading image");
-			responseDto.setError(e.getMessage());
 			return ResponseEntity.status(HttpStatus.CONFLICT).header(HttpHeaders.CONTENT_TYPE, "application/json")
 					.body(responseDto);
 		}
@@ -103,9 +102,8 @@ public class FileController {
 			if (ext.equalsIgnoreCase(".json")) {
 				return ResponseEntity.ok().header(HttpHeaders.CONTENT_TYPE, "application/json").body(file);
 			} else {
-				return ResponseEntity.ok()
-						.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilename() + "\"")
-						.body(file);
+				return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\""
+						+ file.getFilename() + "\"; filename*=utf-8''\"" + file.getFilename() + "\"").body(file);
 			}
 		} catch (Exception e) {
 			return ResponseEntity.badRequest().build();
