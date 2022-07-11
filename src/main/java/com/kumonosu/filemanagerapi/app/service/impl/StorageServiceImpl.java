@@ -108,7 +108,7 @@ public class StorageServiceImpl implements StorageService {
 		fileInfoDto.setFilaname(file.getOriginalFilename());
 		fileInfoDto.setType("FILE_TYPE");
 		fileInfoDto.setExtension(ext);
-		fileInfoDto.setPath(url);
+		fileInfoDto.setUrl(url);
 		fileInfoDto.setCreatedTime(LocalDate.now().toString());
 		fileInfoDto.setFolder(folderInfo);
 

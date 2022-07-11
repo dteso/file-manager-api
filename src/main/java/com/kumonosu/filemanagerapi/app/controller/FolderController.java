@@ -45,7 +45,6 @@ public class FolderController {
 			folderService.create(path, folderDto);
 		} catch (Exception e) {
 			log.error(">>>>> ERROR >>>>>>>  Error creating folder");
-			responseDto.setError(e.getMessage());
 			return ResponseEntity.status(HttpStatus.CONFLICT).header(HttpHeaders.CONTENT_TYPE, "application/json")
 					.body(responseDto);
 		}
@@ -53,10 +52,18 @@ public class FolderController {
 				.body(responseDto);
 	}
 
-	@ApiOperation(value = "Get the folder structure")
+	@ApiOperation(value = "Get the full folder structure")
 	@GetMapping("/get-structure")
 	public ResponseEntity<List<FolderListResponseDto>> getListFiles() {
 		List<FolderListResponseDto> folderStructure = folderService.getStructure();
+		return ResponseEntity.status(HttpStatus.OK).header(HttpHeaders.CONTENT_TYPE, "application/json")
+				.body(folderStructure);
+	}
+
+	@ApiOperation(value = "Get a folder structure")
+	@GetMapping("/get-folder-structure")
+	public ResponseEntity<List<FolderListResponseDto>> getListFilesByPath(@RequestParam String path) {
+		List<FolderListResponseDto> folderStructure = folderService.getStructureByFolderPath(path);
 		return ResponseEntity.status(HttpStatus.OK).header(HttpHeaders.CONTENT_TYPE, "application/json")
 				.body(folderStructure);
 	}

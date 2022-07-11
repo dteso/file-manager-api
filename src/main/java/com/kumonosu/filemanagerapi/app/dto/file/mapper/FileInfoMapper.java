@@ -18,7 +18,7 @@ public final class FileInfoMapper {
 		FileInfo fileInfo = new FileInfo();
 
 		fileInfo.setName(dto.getName());
-		fileInfo.setPath(dto.getPath());
+		fileInfo.setUrl(dto.getUrl());
 		fileInfo.setType(dto.getType());
 		fileInfo.setExtension(dto.getExtension());
 		fileInfo.setFilename(dto.getFilaname());
@@ -38,7 +38,7 @@ public final class FileInfoMapper {
 		FileInfoResponseDto fileInfo = new FileInfoResponseDto();
 
 		fileInfo.setName(file.getName());
-		fileInfo.setPath(file.getPath());
+		fileInfo.setUrl(file.getUrl());
 		fileInfo.setId(file.getId());
 		fileInfo.setOriginalFilename(file.getFilename());
 		fileInfo.setCreatedTime(file.getCreatedTime());

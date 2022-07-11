@@ -23,6 +23,9 @@ public class FolderListResponseDto {
 	@JsonProperty(value = "parentFolder")
 	private Long parentFolder;
 
+	@JsonProperty(value = "folders")
+	private List<FolderInfoResponseDto> folders;
+
 	@JsonProperty(value = "path")
 	private String path;
 

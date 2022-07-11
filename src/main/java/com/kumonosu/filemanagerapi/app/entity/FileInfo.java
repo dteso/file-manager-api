@@ -29,8 +29,8 @@ public class FileInfo {
 	@Column(name = "filename")
 	private String filename;
 
-	@Column(name = "path")
-	private String path;
+	@Column(name = "url")
+	private String url;
 
 	@Column(name = "type")
 	private String type;

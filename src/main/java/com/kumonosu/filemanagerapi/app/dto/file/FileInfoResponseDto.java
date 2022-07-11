@@ -16,13 +16,10 @@ public class FileInfoResponseDto {
 	@JsonProperty(value = "originalFilename")
 	private String originalFilename;
 
-	@JsonProperty(value = "path")
-	private String path;
+	@JsonProperty(value = "url")
+	private String url;
 
 	@JsonProperty(value = "createdTime")
 	private String createdTime;
-
-	@JsonProperty(value = "error")
-	private String error;
 
 }

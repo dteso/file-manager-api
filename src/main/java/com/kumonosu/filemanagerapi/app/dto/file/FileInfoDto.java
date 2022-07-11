@@ -24,8 +24,8 @@ public class FileInfoDto {
 	private String filaname;
 
 	@NotNull
-	@JsonProperty(value = "path")
-	private String path;
+	@JsonProperty(value = "url")
+	private String url;
 
 	@JsonProperty(value = "type")
 	private String type;
