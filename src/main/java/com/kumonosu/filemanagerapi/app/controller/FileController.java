@@ -75,7 +75,7 @@ public class FileController {
 						.body(file);
 			}
 		} catch (Exception e) {
-			return ResponseEntity.badRequest().build();
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 		}
 	}
 
@@ -87,10 +87,10 @@ public class FileController {
 		try {
 			responseDto = FileInfoMapper.fromEntityToResponse(storageService.getFileByName(filename));
 			if (responseDto == null) {
-				return ResponseEntity.notFound().build();
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 			}
 		} catch (Exception e) {
-			return ResponseEntity.badRequest().build();
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 		}
 		return ResponseEntity.status(HttpStatus.OK).body(responseDto);
 	}
@@ -105,7 +105,7 @@ public class FileController {
 			String ext = filename.split("\\.")[1];
 
 			if (file == null) {
-				return ResponseEntity.notFound().build();
+				return ResponseEntity.noContent().build();
 			}
 
 			InputStreamResource resource = new InputStreamResource(new FileInputStream(file.getFile()));
@@ -124,7 +124,7 @@ public class FileController {
 						.contentType(MediaType.APPLICATION_OCTET_STREAM).body(resource);
 			}
 		} catch (Exception e) {
-			return ResponseEntity.badRequest().build();
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 		}
 	}
 
