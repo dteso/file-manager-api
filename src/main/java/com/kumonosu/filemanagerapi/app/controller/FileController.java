@@ -1,12 +1,15 @@
 package com.kumonosu.filemanagerapi.app.controller;
 
+import java.io.FileInputStream;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -50,7 +53,6 @@ public class FileController {
 		try {
 			responseDto = FileInfoMapper.fromEntityToResponse(storageService.store(path, file));
 		} catch (Exception e) {
-			log.error(">>>>> ERROR >>>>>>>  Error uploading image");
 			return ResponseEntity.status(HttpStatus.CONFLICT).header(HttpHeaders.CONTENT_TYPE, "application/json")
 					.body(responseDto);
 		}
@@ -84,6 +86,9 @@ public class FileController {
 		FileInfoResponseDto responseDto = new FileInfoResponseDto();
 		try {
 			responseDto = FileInfoMapper.fromEntityToResponse(storageService.getFileByName(filename));
+			if (responseDto == null) {
+				return ResponseEntity.notFound().build();
+			}
 		} catch (Exception e) {
 			return ResponseEntity.badRequest().build();
 		}
@@ -99,11 +104,24 @@ public class FileController {
 
 			String ext = filename.split("\\.")[1];
 
+			if (file == null) {
+				return ResponseEntity.notFound().build();
+			}
+
+			InputStreamResource resource = new InputStreamResource(new FileInputStream(file.getFile()));
+
 			if (ext.equalsIgnoreCase(".json")) {
 				return ResponseEntity.ok().header(HttpHeaders.CONTENT_TYPE, "application/json").body(file);
 			} else {
-				return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\""
-						+ file.getFilename() + "\"; filename*=utf-8''\"" + file.getFilename() + "\"").body(file);
+				HttpHeaders headers = new HttpHeaders();
+				headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilename()
+						+ "\"; filename*=utf-8 '' \"" + file.getFilename() + "\"");
+				headers.add(filename, ext);
+				headers.add("Cache-Control", "no-cache, no-store, must-revalidate");
+				headers.add("Pragma", "no-cache");
+				headers.add("Expires", "0");
+				return ResponseEntity.ok().headers(headers).contentLength(file.contentLength())
+						.contentType(MediaType.APPLICATION_OCTET_STREAM).body(resource);
 			}
 		} catch (Exception e) {
 			return ResponseEntity.badRequest().build();
@@ -134,14 +152,14 @@ public class FileController {
 
 	@ApiOperation(value = "Deletes a file by his name")
 	@DeleteMapping("/delete/{filename}")
-	public ResponseEntity<?> deleteFile(@PathVariable String filename) {
+	public ResponseEntity<?> deleteFileByName(@PathVariable String filename) {
 		storageService.delete(filename);
 		return ResponseEntity.status(HttpStatus.OK).body(filename);
 	}
 
 	@ApiOperation(value = "Remove all files")
 	@DeleteMapping("/delete-all")
-	public ResponseEntity<?> deleteFiles() {
+	public ResponseEntity<?> deleteAllFiles() {
 		storageService.deleteAll();
 		return ResponseEntity.status(HttpStatus.OK).body("ALL FILES DELETED");
 	}
