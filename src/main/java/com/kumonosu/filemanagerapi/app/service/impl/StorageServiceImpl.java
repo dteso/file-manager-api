@@ -16,8 +16,10 @@ import org.apache.tomcat.util.http.fileupload.impl.SizeLimitExceededException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileSystemUtils;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
 
@@ -126,10 +128,10 @@ public class StorageServiceImpl implements StorageService {
 				return resource;
 			} else {
 				log.info("Could not read the file!");
-				throw new RuntimeException("Could not read the file!");
+				throw new HttpClientErrorException(HttpStatus.NO_CONTENT, "Could not load the files!");
 			}
 		} catch (MalformedURLException e) {
-			throw new RuntimeException("Error: " + e.getMessage());
+			throw new HttpClientErrorException(HttpStatus.INTERNAL_SERVER_ERROR, "Error: " + e);
 		}
 	}
 
@@ -138,7 +140,7 @@ public class StorageServiceImpl implements StorageService {
 		try {
 			return Files.walk(this.root, 1).filter(path -> !path.equals(this.root)).map(this.root::relativize);
 		} catch (IOException e) {
-			throw new RuntimeException("Could not load the files!");
+			throw new HttpClientErrorException(HttpStatus.NO_CONTENT, "Could not load the files!");
 		}
 	}
 
@@ -154,6 +156,7 @@ public class StorageServiceImpl implements StorageService {
 			Files.delete(this.root.resolve(filename));
 		} catch (IOException e) {
 			e.printStackTrace();
+			throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "Could not load the files!" + e);
 		}
 	}
 
