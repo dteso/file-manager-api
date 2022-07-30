@@ -22,4 +22,7 @@ public class FileInfoResponseDto {
 	@JsonProperty(value = "createdTime")
 	private String createdTime;
 
+	@JsonProperty(value = "path")
+	private String path;
+
 }

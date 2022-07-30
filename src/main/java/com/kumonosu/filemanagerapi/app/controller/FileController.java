@@ -40,6 +40,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/files")
 public class FileController {
 
+	private final static String JSON_EXT = ".json";
+
 	@Autowired
 	StorageService storageService;
 
@@ -68,7 +70,7 @@ public class FileController {
 			Resource file = storageService.load(filename);
 
 			String ext = filename.split("\\.")[1];
-			if (ext.equalsIgnoreCase(".json")) {
+			if (ext.equalsIgnoreCase(JSON_EXT)) {
 				return ResponseEntity.ok().header(HttpHeaders.CONTENT_TYPE, "application/json").body(file);
 			} else {
 				return ResponseEntity.ok().header(HttpHeaders.CONTENT_TYPE, "image/png; image/jpeg; image/jpg")
@@ -113,19 +115,24 @@ public class FileController {
 			if (ext.equalsIgnoreCase(".json")) {
 				return ResponseEntity.ok().header(HttpHeaders.CONTENT_TYPE, "application/json").body(file);
 			} else {
-				HttpHeaders headers = new HttpHeaders();
-				headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilename()
-						+ "\"; filename*=utf-8 '' \"" + file.getFilename() + "\"");
-				headers.add(filename, ext);
-				headers.add("Cache-Control", "no-cache, no-store, must-revalidate");
-				headers.add("Pragma", "no-cache");
-				headers.add("Expires", "0");
+				HttpHeaders headers = getHeadersForDownload(filename, file, ext);
 				return ResponseEntity.ok().headers(headers).contentLength(file.contentLength())
 						.contentType(MediaType.APPLICATION_OCTET_STREAM).body(resource);
 			}
 		} catch (Exception e) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 		}
+	}
+
+	private HttpHeaders getHeadersForDownload(String filename, Resource file, String ext) {
+		HttpHeaders headers = new HttpHeaders();
+		headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getFilename()
+				+ "\"; filename*=utf-8 '' \"" + file.getFilename() + "\"");
+		headers.add(filename, ext);
+		headers.add("Cache-Control", "no-cache, no-store, must-revalidate");
+		headers.add("Pragma", "no-cache");
+		headers.add("Expires", "0");
+		return headers;
 	}
 
 	@ApiOperation(value = "Gets a list of all stored files")

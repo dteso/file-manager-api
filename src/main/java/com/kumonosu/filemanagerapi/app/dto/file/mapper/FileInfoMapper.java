@@ -42,6 +42,7 @@ public final class FileInfoMapper {
 		fileInfo.setId(file.getId());
 		fileInfo.setOriginalFilename(file.getFilename());
 		fileInfo.setCreatedTime(file.getCreatedTime());
+		fileInfo.setPath(file.getFolder().getPath());
 
 		return fileInfo;
 	}
